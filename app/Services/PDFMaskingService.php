@@ -15,12 +15,12 @@ class PDFMaskingService
     {
         $this->pythonExecutable = config('app.python_executable', 'python3');
         $this->scriptsPath = storage_path('app/masking_scripts');
-        
+
         // Ensure scripts directory exists
         if (!is_dir($this->scriptsPath)) {
             mkdir($this->scriptsPath, 0755, true);
         }
-        
+
         $this->createMaskingScripts();
     }
 
@@ -30,28 +30,28 @@ class PDFMaskingService
     public function processWithAlgorithm(string $originalPath, array $wordsToMask, string $algorithm, string $jobId): array
     {
         $startTime = microtime(true);
-        
+
         try {
             $fullOriginalPath = Storage::disk('public')->path($originalPath);
             $outputDir = Storage::disk('public')->path("masking/results/{$jobId}");
-            
+
             // Ensure output directory exists
             if (!is_dir($outputDir)) {
                 mkdir($outputDir, 0755, true);
             }
-            
+
             $outputFilename = Str::uuid() . "_{$algorithm}.pdf";
             $outputPath = "{$outputDir}/{$outputFilename}";
-            
+
             // Execute the masking script
             $result = $this->executeMaskingScript($algorithm, $fullOriginalPath, $outputPath, $wordsToMask);
-            
+
             $processingTime = (microtime(true) - $startTime) * 1000; // Convert to milliseconds
-            
+
             if ($result['success']) {
                 $relativePath = "masking/results/{$jobId}/{$outputFilename}";
                 $fileSize = file_exists($outputPath) ? filesize($outputPath) : 0;
-                
+
                 return [
                     'algorithm_name' => $this->getAlgorithmName($algorithm),
                     'library_used' => $this->getLibraryName($algorithm),
@@ -72,10 +72,10 @@ class PDFMaskingService
                     'error_message' => $result['error']
                 ];
             }
-            
+
         } catch (\Exception $e) {
             $processingTime = (microtime(true) - $startTime) * 1000;
-            
+
             return [
                 'algorithm_name' => $this->getAlgorithmName($algorithm),
                 'library_used' => $this->getLibraryName($algorithm),
@@ -94,11 +94,11 @@ class PDFMaskingService
     private function executeMaskingScript(string $algorithm, string $inputPath, string $outputPath, array $wordsToMask): array
     {
         $scriptPath = "{$this->scriptsPath}/{$algorithm}.py";
-        
+
         if (!file_exists($scriptPath)) {
             throw new \Exception("Masking script not found for algorithm: {$algorithm}");
         }
-        
+
         // Prepare arguments
         $wordsJson = json_encode($wordsToMask);
         $command = [
@@ -108,10 +108,10 @@ class PDFMaskingService
             $outputPath,
             $wordsJson
         ];
-        
+
         // Execute the Python script
         $result = Process::run($command);
-        
+
         if ($result->successful()) {
             $output = json_decode($result->output(), true);
             return [
@@ -154,15 +154,15 @@ import io
 def mask_pdf_regex(input_path, output_path, words_to_mask):
     try:
         words_masked_count = 0
-        
+
         # Read the PDF
         reader = PdfReader(input_path)
         writer = PdfWriter()
-        
+
         for page in reader.pages:
             # Extract text from page
             text = page.extract_text()
-            
+
             # Replace words (case-insensitive)
             modified_text = text
             for word in words_to_mask:
@@ -171,17 +171,17 @@ def mask_pdf_regex(input_path, output_path, words_to_mask):
                     matches = pattern.findall(modified_text)
                     words_masked_count += len(matches)
                     modified_text = pattern.sub('█' * len(word), modified_text)
-            
+
             # Note: This is a simplified approach
             # In a real implementation, you'd need to modify the PDF content stream
             writer.add_page(page)
-        
+
         # Write the output PDF
         with open(output_path, 'wb') as output_file:
             writer.write(output_file)
-        
+
         return {'words_masked_count': words_masked_count}
-        
+
     except Exception as e:
         raise Exception(f"Regex masking failed: {str(e)}")
 
@@ -189,11 +189,11 @@ if __name__ == "__main__":
     if len(sys.argv) != 4:
         print("Usage: python script.py <input_pdf> <output_pdf> <words_json>")
         sys.exit(1)
-    
+
     input_path = sys.argv[1]
     output_path = sys.argv[2]
     words_to_mask = json.loads(sys.argv[3])
-    
+
     try:
         result = mask_pdf_regex(input_path, output_path, words_to_mask)
         print(json.dumps(result))
@@ -224,31 +224,31 @@ import io
 def mask_pdf_pypdf(input_path, output_path, words_to_mask):
     try:
         words_masked_count = 0
-        
+
         # Read the PDF
         reader = PdfReader(input_path)
         writer = PdfWriter()
-        
+
         for page in reader.pages:
             # Extract text from page
             text = page.extract_text()
-            
+
             # Count masked words
             for word in words_to_mask:
                 if word.strip():
                     pattern = re.compile(re.escape(word), re.IGNORECASE)
                     matches = pattern.findall(text)
                     words_masked_count += len(matches)
-            
+
             # Add page to writer (simplified - real implementation would modify content)
             writer.add_page(page)
-        
+
         # Write the output PDF
         with open(output_path, 'wb') as output_file:
             writer.write(output_file)
-        
+
         return {'words_masked_count': words_masked_count}
-        
+
     except Exception as e:
         raise Exception(f"PyPDF masking failed: {str(e)}")
 
@@ -256,11 +256,11 @@ if __name__ == "__main__":
     if len(sys.argv) != 4:
         print("Usage: python script.py <input_pdf> <output_pdf> <words_json>")
         sys.exit(1)
-    
+
     input_path = sys.argv[1]
     output_path = sys.argv[2]
     words_to_mask = json.loads(sys.argv[3])
-    
+
     try:
         result = mask_pdf_pypdf(input_path, output_path, words_to_mask)
         print(json.dumps(result))
@@ -291,40 +291,40 @@ import io
 def mask_pdf_reportlab(input_path, output_path, words_to_mask):
     try:
         words_masked_count = 0
-        
+
         # Read the PDF
         reader = PdfReader(input_path)
         writer = PdfWriter()
-        
+
         for page_num, page in enumerate(reader.pages):
             # Extract text from page
             text = page.extract_text()
-            
+
             # Count masked words
             for word in words_to_mask:
                 if word.strip():
                     pattern = re.compile(re.escape(word), re.IGNORECASE)
                     matches = pattern.findall(text)
                     words_masked_count += len(matches)
-            
+
             # Create overlay with black rectangles (simplified)
             packet = io.BytesIO()
             overlay_canvas = canvas.Canvas(packet, pagesize=letter)
             overlay_canvas.setFillColor(black)
-            
+
             # This is a simplified approach - real implementation would
             # need to detect word positions and overlay black rectangles
             overlay_canvas.save()
-            
+
             # Add page to writer
             writer.add_page(page)
-        
+
         # Write the output PDF
         with open(output_path, 'wb') as output_file:
             writer.write(output_file)
-        
+
         return {'words_masked_count': words_masked_count}
-        
+
     except Exception as e:
         raise Exception(f"ReportLab masking failed: {str(e)}")
 
@@ -332,11 +332,11 @@ if __name__ == "__main__":
     if len(sys.argv) != 4:
         print("Usage: python script.py <input_pdf> <output_pdf> <words_json>")
         sys.exit(1)
-    
+
     input_path = sys.argv[1]
     output_path = sys.argv[2]
     words_to_mask = json.loads(sys.argv[3])
-    
+
     try:
         result = mask_pdf_reportlab(input_path, output_path, words_to_mask)
         print(json.dumps(result))
@@ -364,10 +364,10 @@ import fitz  # PyMuPDF
 def mask_pdf_fitz(input_path, output_path, words_to_mask):
     try:
         words_masked_count = 0
-        
+
         # Open the PDF
         doc = fitz.open(input_path)
-        
+
         for page in doc:
             # Search for words and redact them
             for word in words_to_mask:
@@ -375,20 +375,20 @@ def mask_pdf_fitz(input_path, output_path, words_to_mask):
                     # Search for the word (case-insensitive)
                     text_instances = page.search_for(word, quads=True)
                     words_masked_count += len(text_instances)
-                    
+
                     # Redact each instance
                     for inst in text_instances:
                         page.add_redact_annot(inst, text="", fill=(0, 0, 0))
-            
+
             # Apply redactions
             page.apply_redactions()
-        
+
         # Save the redacted PDF
         doc.save(output_path)
         doc.close()
-        
+
         return {'words_masked_count': words_masked_count}
-        
+
     except Exception as e:
         raise Exception(f"Fitz masking failed: {str(e)}")
 
@@ -396,11 +396,11 @@ if __name__ == "__main__":
     if len(sys.argv) != 4:
         print("Usage: python script.py <input_pdf> <output_pdf> <words_json>")
         sys.exit(1)
-    
+
     input_path = sys.argv[1]
     output_path = sys.argv[2]
     words_to_mask = json.loads(sys.argv[3])
-    
+
     try:
         result = mask_pdf_fitz(input_path, output_path, words_to_mask)
         print(json.dumps(result))
@@ -429,33 +429,33 @@ from PyPDF2 import PdfReader, PdfWriter
 def mask_pdf_pdfplumber(input_path, output_path, words_to_mask):
     try:
         words_masked_count = 0
-        
+
         # Extract text using pdfplumber
         with pdfplumber.open(input_path) as pdf:
             # Read the original PDF
             reader = PdfReader(input_path)
             writer = PdfWriter()
-            
+
             for page_num, page in enumerate(pdf.pages):
                 # Extract text from current page
                 text = page.extract_text()
-                
+
                 # Count masked words
                 for word in words_to_mask:
                     if word.strip():
                         pattern = re.compile(re.escape(word), re.IGNORECASE)
                         matches = pattern.findall(text)
                         words_masked_count += len(matches)
-                
+
                 # Add original page to writer (simplified)
                 writer.add_page(reader.pages[page_num])
-        
+
         # Write the output PDF
         with open(output_path, 'wb') as output_file:
             writer.write(output_file)
-        
+
         return {'words_masked_count': words_masked_count}
-        
+
     except Exception as e:
         raise Exception(f"PDFPlumber masking failed: {str(e)}")
 
@@ -463,11 +463,11 @@ if __name__ == "__main__":
     if len(sys.argv) != 4:
         print("Usage: python script.py <input_pdf> <output_pdf> <words_json>")
         sys.exit(1)
-    
+
     input_path = sys.argv[1]
     output_path = sys.argv[2]
     words_to_mask = json.loads(sys.argv[3])
-    
+
     try:
         result = mask_pdf_pdfplumber(input_path, output_path, words_to_mask)
         print(json.dumps(result))

@@ -54,7 +54,7 @@ class MaskingController extends Controller
 
             // Store the original file
             $originalPath = $file->store('masking/originals', 'public');
-            
+
             // Create masking job
             $jobId = Str::uuid();
             $maskingJob = MaskingJob::create([
@@ -196,7 +196,7 @@ class MaskingController extends Controller
             }
 
             $filename = "masked_{$result->algorithm_name}_{$result->id}.pdf";
-            
+
             return Storage::disk('public')->download($result->masked_file_path, $filename);
 
         } catch (\Exception $e) {
@@ -344,7 +344,7 @@ class MaskingController extends Controller
             'file_size' => $result->file_size,
             'words_masked_count' => $result->words_masked_count,
             'download_url' => $result->status === 'completed' ? route('api.masking.download', $result->id) : null,
-            'preview_url' => $result->status === 'completed' && $result->masked_file_path ? 
+            'preview_url' => $result->status === 'completed' && $result->masked_file_path ?
                 Storage::disk('public')->url($result->masked_file_path) : null,
             'error_message' => $result->error_message,
             'created_at' => $result->created_at->toISOString()

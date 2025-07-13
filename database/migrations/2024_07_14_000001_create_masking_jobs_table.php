@@ -20,7 +20,7 @@ return new class extends Migration
             $table->json('algorithms');
             $table->enum('status', ['processing', 'completed', 'failed'])->default('processing');
             $table->timestamps();
-            
+
             $table->index(['user_id', 'created_at']);
         });
     }

@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('masked_file_path')->nullable();
             $table->text('error_message')->nullable();
             $table->timestamps();
-            
+
             $table->foreign('masking_job_id')->references('id')->on('masking_jobs')->onDelete('cascade');
             $table->index(['masking_job_id', 'created_at']);
         });
