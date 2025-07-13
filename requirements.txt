@@ -1,0 +1,9 @@
+# PDF Processing Libraries for Masking
+PyPDF2==3.0.1
+PyPDF4==1.27.0
+reportlab==4.0.4
+PyMuPDF==1.23.3
+pdfplumber==0.9.0
+
+# Core dependencies
+requests==2.31.0

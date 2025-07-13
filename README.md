@@ -6,6 +6,7 @@ A robust Laravel-based backend API for PDF upload, processing, and text extracti
 
 - **PDF Upload & Processing**: Upload PDFs with support for chunked uploads (large files)
 - **Text Extraction**: Automatic text extraction from PDF files
+- **PDF Masking/Redaction**: Advanced PDF masking with 5 different algorithms (PyMuPDF, ReportLab, PyPDF, PDFPlumber, Regex)
 - **User Quota Management**: Storage limits and usage tracking
 - **Authentication**: Sanctum-based API authentication
 - **Queue Processing**: Background job processing with Laravel Horizon
@@ -18,6 +19,7 @@ A robust Laravel-based backend API for PDF upload, processing, and text extracti
 - **Database**: SQLite (development) / PostgreSQL (production)
 - **Queue**: Redis with Laravel Horizon
 - **Authentication**: Laravel Sanctum
+- **PDF Processing**: Python (PyMuPDF, ReportLab, PyPDF, PDFPlumber)
 - **File Storage**: Local storage with organized directory structure
 - **PDF Processing**: Custom PDF text extraction service
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\MaskingController;
 use App\Http\Controllers\API\PdfUploadController;
 use App\Http\Controllers\API\PaymentController;
 use App\Http\Controllers\API\UserQuotaController;
@@ -47,4 +48,14 @@ Route::middleware('auth:sanctum')->group(function () {
     // Payments
     Route::apiResource('payments', PaymentController::class)->only(['index', 'show']);
     Route::post('/payments/create', [PaymentController::class, 'createPayment']);
+
+    // PDF Masking
+    Route::prefix('masking')->name('api.masking.')->group(function () {
+        Route::post('/process', [MaskingController::class, 'processMasking'])->name('process');
+        Route::get('/results/{jobId}', [MaskingController::class, 'getMaskingResults'])->name('results');
+        Route::get('/download/{resultId}', [MaskingController::class, 'downloadMaskedPdf'])->name('download');
+        Route::delete('/results/{resultId}', [MaskingController::class, 'deleteMaskingResult'])->name('delete');
+        Route::get('/history', [MaskingController::class, 'getMaskingHistory'])->name('history');
+        Route::get('/algorithms', [MaskingController::class, 'getAvailableAlgorithms'])->name('algorithms');
+    });
 });
